@@ -3,7 +3,7 @@
 """
 XXE/SSRF Scanner Module for Bitrix Pentest Tool
 Tests for: XML External Entity injection, Server-Side Request Forgery,
- Blind XXE, Out-of-band data exfiltration
+Blind XXE, Out-of-band data exfiltration
 """
 
 import re
@@ -63,13 +63,13 @@ class XXESSRFResult:
     def get_critical_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'critical')
     
-    def get_high_count(self) -> int:  # Добавлен метод
+    def get_high_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'high')
     
-    def get_medium_count(self) -> int:  # Добавлен метод
+    def get_medium_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'medium')
     
-    def get_low_count(self) -> int:  # Добавлен метод
+    def get_low_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'low')
     
     def to_dict(self) -> Dict[str, Any]:
@@ -78,9 +78,9 @@ class XXESSRFResult:
             'summary': {
                 'total_findings': len(self.findings),
                 'critical': self.get_critical_count(),
-                'high': self.get_high_count(),  # Используем метод
-                'medium': self.get_medium_count(),  # Используем метод
-                'low': self.get_low_count(),  # Используем метод
+                'high': self.get_high_count(),
+                'medium': self.get_medium_count(),
+                'low': self.get_low_count(),
                 'xxe': len(self.xxe_vulns),
                 'ssrf': len(self.ssrf_vulns),
                 'blind_xxe': len(self.blind_xxe),
