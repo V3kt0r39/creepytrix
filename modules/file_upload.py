@@ -167,7 +167,7 @@ class BitrixFileUploadScanner:
     BYPASS_TECHNIQUES = [
         {'name': 'Case variation', 'filename': 'SHELL.PHP'},
         {'name': 'Double extension', 'filename': 'shell.php.jpg'},
-        {'name': 'Reverse double ext', 'filename': 'shell.jpg.php'},
+        {'name': 'Reverse double extension', 'filename': 'shell.jpg.php'},
         {'name': 'Null byte', 'filename': 'shell.php\x00.jpg'},
         {'name': 'Path traversal', 'filename': '../../../shell.php'},
         {'name': 'URL encoding', 'filename': 'shell%2ephp'},
