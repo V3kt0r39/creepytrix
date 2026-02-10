@@ -58,13 +58,13 @@ class Integration1CResult:
     def get_critical_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'critical')
     
-    def get_high_count(self) -> int:  # Добавлен метод
+    def get_high_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'high')
     
-    def get_medium_count(self) -> int:  # Добавлен метод
+    def get_medium_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'medium')
     
-    def get_low_count(self) -> int:  # Добавлен метод
+    def get_low_count(self) -> int:
         return sum(1 for f in self.findings if f.severity == 'low')
     
     def to_dict(self) -> Dict[str, Any]:
@@ -73,9 +73,9 @@ class Integration1CResult:
             'summary': {
                 'total_findings': len(self.findings),
                 'critical': self.get_critical_count(),
-                'high': self.get_high_count(),  # Используем метод
-                'medium': self.get_medium_count(),  # Используем метод
-                'low': self.get_low_count(),  # Используем метод
+                'high': self.get_high_count(),
+                'medium': self.get_medium_count(),
+                'low': self.get_low_count(),
                 'exchange_vulns': len(self.exchange_vulns),
                 'xml_vulns': len(self.xml_vulns),
                 'data_leaks': len(self.data_leaks),
@@ -141,14 +141,14 @@ class Bitrix1CIntegrationScanner:
     
     # Dangerous 1C Exchange modes
     DANGEROUS_MODES = [
-        'init',      # Initialize exchange session
-        'file',      # Upload file
-        'import',    # Import data
-        'delete',    # Delete data
-        'query',     # Query data
-        'checkauth', # Check authentication
-        'get_catalog',   # Get catalog
-        'get_sales',     # Get sales data
+        'init',           # Initialize exchange session
+        'file',           # Upload file
+        'import',         # Import data
+        'delete',         # Delete data
+        'query',          # Query data
+        'checkauth',      # Check authentication
+        'get_catalog',    # Get catalog
+        'get_sales',      # Get sales data
         'get_enterprise', # Get enterprise data
     ]
     
@@ -166,59 +166,59 @@ class Bitrix1CIntegrationScanner:
     XML_TEST_PAYLOADS = [
         # Basic catalog structure
         '''<?xml version="1.0" encoding="UTF-8"?>
-<КоммерческаяИнформация ВерсияСхемы="2.021" ДатаФормирования="2024-01-01">
-    <Каталог>
-        <Ид>test-catalog-id</Ид>
-        <Наименование>Test Catalog</Наименование>
-        <Товары>
-            <Товар>
-                <Ид>test-product-1</Ид>
-                <Наименование>Test Product</Наименование>
-                <Цены>
-                    <Цена>
-                        <Представление>Test Price</Представление>
-                        <ЦенаЗаЕдиницу>999999</ЦенаЗаЕдиницу>
-                    </Цена>
-                </Цены>
-            </Товар>
-        </Товары>
-    </Каталог>
-</КоммерческаяИнформация>''',
+<CommercialInformation SchemaVersion="2.021" FormationDate="2024-01-01">
+    <Catalog>
+        <Id>test-catalog-id</Id>
+        <Name>Test Catalog</Name>
+        <Products>
+            <Product>
+                <Id>test-product-1</Id>
+                <Name>Test Product</Name>
+                <Prices>
+                    <Price>
+                        <Representation>Test Price</Representation>
+                        <PricePerUnit>999999</PricePerUnit>
+                    </Price>
+                </Prices>
+            </Product>
+        </Products>
+    </Catalog>
+</CommercialInformation>''',
         
         # Sale order structure
         '''<?xml version="1.0" encoding="UTF-8"?>
-<КоммерческаяИнформация>
-    <Документ>
-        <Ид>test-order-1</Ид>
-        <Номер>99999</Номер>
-        <Дата>2024-01-01</Дата>
-        <ХозОперация>Заказ товара</ХозОперация>
-        <Роль>Продавец</Роль>
-        <Валюта>RUB</Валюта>
-        <Курс>1</Курс>
-        <Сумма>999999</Сумма>
-        <Контрагенты>
-            <Контрагент>
-                <Ид>test-client-1</Ид>
-                <Наименование>Test Client</Наименование>
-                <Роль>Покупатель</Роль>
-            </Контрагент>
-        </Контрагенты>
-    </Документ>
-</КоммерческаяИнформация>''',
+<CommercialInformation>
+    <Document>
+        <Id>test-order-1</Id>
+        <Number>99999</Number>
+        <Date>2024-01-01</Date>
+        <EconomicOperation>Product Order</EconomicOperation>
+        <Role>Seller</Role>
+        <Currency>RUB</Currency>
+        <Rate>1</Rate>
+        <Sum>999999</Sum>
+        <Counterparties>
+            <Counterparty>
+                <Id>test-client-1</Id>
+                <Name>Test Client</Name>
+                <Role>Buyer</Role>
+            </Counterparty>
+        </Counterparties>
+    </Document>
+</CommercialInformation>''',
         
         # XXE payload via 1C Exchange
         '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///bitrix/.settings.php">]>
-<КоммерческаяИнформация>&xxe;</КоммерческаяИнформация>''',
+<CommercialInformation>&xxe;</CommercialInformation>''',
         
         # XPath injection test
         '''<?xml version="1.0" encoding="UTF-8"?>
-<КоммерческаяИнформация>
-    <Каталог>
-        <Ид>' or '1'='1</Ид>
-    </Каталог>
-</КоммерческаяИнформация>''',
+<CommercialInformation>
+    <Catalog>
+        <Id>' or '1'='1</Id>
+    </Catalog>
+</CommercialInformation>''',
     ]
     
     # Authentication bypass payloads
@@ -351,18 +351,18 @@ class Bitrix1CIntegrationScanner:
         indicators = [
             '1C+Enterprise',
             'CommerceML',
-            'КоммерческаяИнформация',
-            'СхемаИмен',
-            'ВыгрузкаТоваров',
-            'ОбменДанными',
+            'CommercialInformation',
+            'SchemaNames',
+            'ProductExport',
+            'DataExchange',
             '1c_exchange',
             'IBLOCK_ID',
             'CATALOG_EXPORT',
             'XML_ID',
             'success',
             'failure',
-            'Ошибка',
-            'ЗапросДанных',
+            'Error',
+            'DataQuery',
         ]
         
         content = response.text[:2000] if response.text else ''
@@ -600,12 +600,12 @@ class Bitrix1CIntegrationScanner:
         
         # Patterns for sensitive data
         patterns = {
-            'products': r'<Товар>.*?</Товар>',
-            'prices': r'<Цена>.*?</Цена>',
-            'clients': r'<Контрагент>.*?</Контрагент>',
-            'orders': r'<Документ>.*?</Документ>',
-            'users': r'<Пользователь>.*?</Пользователь>',
-            'companies': r'<Организация>.*?</Организация>',
+            'products': r'<Product>.*?</Product>',
+            'prices': r'<Price>.*?</Price>',
+            'clients': r'<Counterparty>.*?</Counterparty>',
+            'orders': r'<Document>.*?</Document>',
+            'users': r'<User>.*?</User>',
+            'companies': r'<Organization>.*?</Organization>',
         }
         
         for key, pattern in patterns.items():
@@ -842,13 +842,13 @@ class Bitrix1CIntegrationScanner:
     def _contains_enterprise_data(self, content: str) -> bool:
         """Check if content contains actual enterprise data"""
         indicators = [
-            'КоммерческаяИнформация',
-            'Каталог',
-            'Товар',
-            'Цена',
-            'Контрагент',
-            'Документ',
-            'Заказ',
+            'CommercialInformation',
+            'Catalog',
+            'Product',
+            'Price',
+            'Counterparty',
+            'Document',
+            'Order',
             'IBLOCK_ID',
             'XML_ID',
             'success',
