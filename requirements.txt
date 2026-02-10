@@ -1,0 +1,64 @@
+
+# Bitrix Pentest Tool v1.1
+# Requirements
+
+# HTTP Requests
+requests>=2.28.0
+urllib3>=1.26.0
+
+# Data Processing
+dataclasses>=0.6; python_version < "3.7"
+
+# JWT Handling (for API Scanner)
+PyJWT>=2.4.0
+cryptography>=3.4.8
+
+# XML Processing (for XXE/SSRF and 1C modules)
+lxml>=4.9.0
+defusedxml>=0.7.1
+
+# HTML Parsing (for XSS and Info Disclosure)
+beautifulsoup4>=4.11.0
+html5lib>=1.1
+
+# Color Output (optional, for Windows)
+colorama>=0.4.5; platform_system == "Windows"
+
+# JSON Handling
+jsonschema>=4.6.0
+
+# Regex
+regex>=2022.6.2
+
+# URL Parsing
+yarl>=1.8.0
+
+# Progress Bars (optional)
+tqdm>=4.64.0
+
+# CLI Arguments
+argparse>=1.4.0
+
+# Type Hints
+typing-extensions>=4.3.0; python_version < "3.8"
+
+# Date/Time Handling
+python-dateutil>=2.8.2
+
+# String Matching
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.12.2
+
+# Encoding Detection
+chardet>=5.0.0
+
+# SSL/TLS
+certifi>=2022.6.15
+pyOpenSSL>=22.0.0
+
+# Development Dependencies (optional)
+# pytest>=7.1.0
+# pytest-cov>=3.0.0
+# black>=22.6.0
+# flake8>=5.0.0
+# mypy>=0.971
