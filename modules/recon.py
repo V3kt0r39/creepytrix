@@ -1,4 +1,3 @@
-# modules/recon.py
 import re
 import json
 import hashlib
@@ -9,12 +8,12 @@ from bs4 import BeautifulSoup
 
 @dataclass
 class ReconResult:
-    """Структура результатов разведки"""
+    """Structure of reconnaissance results"""
     url: str
     bitrix_detected: bool
     version: Optional[str] = None
     edition: Optional[str] = None
-    license_key_hash: Optional[str] = None  # хеш ключа, не сам ключ
+    license_key_hash: Optional[str] = None  # hash of key, not the key itself
     admin_url: Optional[str] = None
     exposed_paths: List[str] = None
     technologies: List[str] = None
@@ -37,11 +36,11 @@ class ReconResult:
 
 class BitrixRecon:
     """
-    Модуль разведки Bitrix-сайтов
-    Определяет версию, редакцию, структуру, точки входа
+    Bitrix website reconnaissance module
+    Detects version, edition, structure, entry points
     """
     
-    # Сигнатуры Bitrix
+    # Bitrix signatures
     BITRIX_SIGNATURES = [
         '/bitrix/',
         'bx-core',
@@ -51,16 +50,16 @@ class BitrixRecon:
         'bitrix24',
     ]
     
-    # Пути для определения версии
+    # Paths for version detection
     VERSION_PATHS = [
-        '/bitrix/js/main/core/core.js',           # JS версия
-        '/bitrix/js/main/core/core_ajax.js',      # Альтернативный JS
-        '/bitrix/js/main/core/core_fx.js',        # Еще один вариант
-        '/bitrix/modules/main/classes/general/version.php',  # PHP (редко доступен)
-        '/bitrix/modules/main/lib/version.php',   # D7 версия
+        '/bitrix/js/main/core/core.js',           # JS version
+        '/bitrix/js/main/core/core_ajax.js',      # Alternative JS
+        '/bitrix/js/main/core/core_fx.js',        # Another variant
+        '/bitrix/modules/main/classes/general/version.php',  # PHP (rarely accessible)
+        '/bitrix/modules/main/lib/version.php',   # D7 version
     ]
     
-    # Критичные пути для проверки доступности
+    # Critical paths to check for accessibility
     SENSITIVE_PATHS = [
         '/bitrix/admin/',
         '/bitrix/backup/',
@@ -73,7 +72,7 @@ class BitrixRecon:
         '/.access.php',
         '/robots.txt',
         '/sitemap.xml',
-        '/bitrix/html_pages/',  # Композитный кэш
+        '/bitrix/html_pages/',  # Composite cache
         '/bitrix/cache/',
         '/bitrix/stack_cache/',
         '/bitrix/managed_cache/',
@@ -82,7 +81,7 @@ class BitrixRecon:
         '/local/templates/',
     ]
     
-    # Заголовки и их значения, указывающие на Bitrix
+    # Headers and their values indicating Bitrix
     BITRIX_HEADERS = [
         'X-Bitrix-Composite',
         'X-Bitrix-Param-CACHE',
@@ -92,8 +91,8 @@ class BitrixRecon:
     def __init__(self, requester, logger):
         """
         Args:
-            requester: объект для HTTP-запросов
-            logger: объект для логирования
+            requester: Object for HTTP requests
+            logger: Object for logging
         """
         self.requester = requester
         self.logger = logger
@@ -101,22 +100,22 @@ class BitrixRecon:
         
     def scan(self, target_url: str, aggressive: bool = False) -> ReconResult:
         """
-        Основной метод сканирования
+        Main scanning method
         
         Args:
-            target_url: URL цели (с http/https)
-            aggressive: агрессивное сканирование (больше запросов)
+            target_url: Target URL (with http/https)
+            aggressive: Aggressive scanning (more requests)
         
         Returns:
-            ReconResult: структура с результатами
+            ReconResult: Structure with results
         """
         self.logger.info(f"Starting reconnaissance for {target_url}")
         
-        # Нормализация URL
+        # URL normalization
         base_url = self._normalize_url(target_url)
         result = ReconResult(url=base_url, bitrix_detected=False)
         
-        # 1. Проверка, что это вообще Bitrix
+        # 1. Check if this is Bitrix at all
         if not self._detect_bitrix(base_url):
             self.logger.warning(f"Bitrix not detected on {base_url}")
             return result
@@ -124,32 +123,32 @@ class BitrixRecon:
         result.bitrix_detected = True
         self.logger.success(f"Bitrix detected on {base_url}")
         
-        # 2. Определение версии
+        # 2. Version detection
         result.version = self._detect_version(base_url)
         if result.version:
             self.logger.info(f"Detected version: {result.version}")
         
-        # 3. Определение редакции
+        # 3. Edition detection
         result.edition = self._detect_edition(base_url)
         if result.edition:
             self.logger.info(f"Detected edition: {result.edition}")
         
-        # 4. Поиск админки
+        # 4. Find admin panel
         result.admin_url = self._find_admin_panel(base_url)
         
-        # 5. Проверка exposed paths
+        # 5. Check exposed paths
         result.exposed_paths = self._check_sensitive_paths(base_url)
         
-        # 6. Анализ robots.txt
+        # 6. Analyze robots.txt
         result.robots_disallow = self._analyze_robots(base_url)
         
-        # 7. Поиск sitemap
+        # 7. Find sitemaps
         result.sitemap_urls = self._find_sitemaps(base_url)
         
-        # 8. Определение технологий (CDN, сервер и т.д.)
+        # 8. Detect technologies (CDN, server, etc.)
         result.technologies = self._detect_technologies(base_url)
         
-        # 9. Агрессивное сканирование (если включено)
+        # 9. Aggressive scanning (if enabled)
         if aggressive:
             self._aggressive_scan(base_url, result)
         
@@ -157,7 +156,7 @@ class BitrixRecon:
         return result
     
     def _normalize_url(self, url: str) -> str:
-        """Нормализация URL"""
+        """URL normalization"""
         if not url.startswith(('http://', 'https://')):
             url = 'https://' + url
         
@@ -165,10 +164,10 @@ class BitrixRecon:
         return f"{parsed.scheme}://{parsed.netloc}"
     
     def _detect_bitrix(self, base_url: str) -> bool:
-        """Определение, является ли сайт Bitrix"""
+        """Check if the site is Bitrix"""
         indicators = []
         
-        # Проверка главной страницы
+        # Check home page
         response = self.requester.get(base_url)
         if not response:
             return False
@@ -176,19 +175,19 @@ class BitrixRecon:
         content = response.text.lower()
         headers = response.headers
         
-        # Проверка сигнатур в HTML
+        # Check HTML signatures
         for sig in self.BITRIX_SIGNATURES:
             if sig.lower() in content:
                 indicators.append(f"html_signature:{sig}")
         
-        # Проверка заголовков
+        # Check headers
         for header_name, header_value in headers.items():
             header_name_lower = header_name.lower()
             for bx_header in self.BITRIX_HEADERS:
                 if bx_header.lower() in header_name_lower:
                     indicators.append(f"header:{header_name}")
         
-        # Проверка наличия /bitrix/ директории
+        # Check for /bitrix/ directory
         test_paths = ['/bitrix/js/', '/bitrix/templates/', '/bitrix/components/']
         for path in test_paths:
             resp = self.requester.get(urljoin(base_url, path), allow_redirects=False)
@@ -196,7 +195,7 @@ class BitrixRecon:
                 indicators.append(f"directory:{path}")
                 break
         
-        # Проверка cookies
+        # Check cookies
         if 'set-cookie' in headers:
             cookies = headers['set-cookie'].lower()
             if 'bitrix' in cookies or 'bx_' in cookies:
@@ -206,16 +205,16 @@ class BitrixRecon:
         return len(indicators) > 0
     
     def _detect_version(self, base_url: str) -> Optional[str]:
-        """Определение версии Bitrix через различные пути"""
+        """Version detection through various paths"""
         versions = []
         
-        # Метод 1: Через JS файлы
-        for path in self.VERSION_PATHS[:3]:  # Только JS пути
+        # Method 1: Through JS files
+        for path in self.VERSION_PATHS[:3]:  # Only JS paths
             url = urljoin(base_url, path)
             response = self.requester.get(url)
             
             if response and response.status_code == 200:
-                # Паттерн: BX.message({ ... 'bitrix_version':'20.0.0' ... })
+                # Pattern: BX.message({ ... 'bitrix_version':'20.0.0' ... })
                 patterns = [
                     r"bitrix_version['\"]\s*:\s*['\"](\d+\.\d+\.\d+)['\"]",
                     r'version\s*[=:]\s*["\'](\d+\.\d+\.\d+)["\']',
@@ -229,7 +228,7 @@ class BitrixRecon:
                         versions.append((path, match.group(1)))
                         break
         
-        # Метод 2: Через meta generator
+        # Method 2: Through meta generator
         response = self.requester.get(base_url)
         if response:
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -237,7 +236,7 @@ class BitrixRecon:
             if meta:
                 versions.append(('meta', meta.get('content', '')))
             
-            # Поиск в скриптах
+            # Search in scripts
             scripts = soup.find_all('script', src=True)
             for script in scripts:
                 src = script['src']
@@ -246,19 +245,19 @@ class BitrixRecon:
                     ver_match = re.search(r'\?(\d{10,})', src)
                     if ver_match:
                         timestamp = ver_match.group(1)
-                        # Можно примерно определить версию по timestamp
+                        # Can roughly determine version by timestamp
                         versions.append(('js_timestamp', timestamp))
         
-        # Метод 3: Через CSS
+        # Method 3: Through CSS
         css_url = urljoin(base_url, '/bitrix/css/main/style.css')
         css_resp = self.requester.get(css_url)
         if css_resp and css_resp.status_code == 200:
-            # Bitrix иногда пишет версию в комментарии CSS
+            # Bitrix sometimes writes version in CSS comment
             ver_match = re.search(r'Bitrix\s+v\.?(\d+\.\d+\.\d+)', css_resp.text, re.I)
             if ver_match:
                 versions.append(('css', ver_match.group(1)))
         
-        # Возвращаем наиболее частую или первую найденную версию
+        # Return the most common or first found version
         if versions:
             version_counts = {}
             for source, ver in versions:
@@ -271,7 +270,7 @@ class BitrixRecon:
         return None
     
     def _detect_edition(self, base_url: str) -> Optional[str]:
-        """Определение редакции Bitrix"""
+        """Detection of Bitrix edition"""
         editions = {
             'business': ['/bitrix/modules/sale/', '/bitrix/modules/catalog/'],
             'small_business': ['/bitrix/modules/sale/', '/bitrix/modules/catalog/'],
@@ -283,7 +282,7 @@ class BitrixRecon:
         
         detected_modules = set()
         
-        # Проверяем наличие модулей
+        # Check for module presence
         module_paths = [
             '/bitrix/modules/sale/',
             '/bitrix/modules/catalog/',
@@ -303,7 +302,7 @@ class BitrixRecon:
                 module_name = path.strip('/').split('/')[-1]
                 detected_modules.add(module_name)
         
-        # Определяем редакцию по модулям
+        # Determine edition by modules
         if 'intranet' in detected_modules or 'socialnetwork' in detected_modules:
             return "Bitrix24/Enterprise"
         elif 'crm' in detected_modules and 'bizproc' in detected_modules:
@@ -316,11 +315,11 @@ class BitrixRecon:
         return None
     
     def _find_admin_panel(self, base_url: str) -> Optional[str]:
-        """Поиск URL админ-панели"""
+        """Find admin panel URL"""
         admin_paths = [
             '/bitrix/admin/',
             '/bitrix/admin/index.php',
-            '/local/admin/',  # Редкий случай
+            '/local/admin/',  # Rare case
         ]
         
         for path in admin_paths:
@@ -328,20 +327,20 @@ class BitrixRecon:
             resp = self.requester.get(url, allow_redirects=True)
             
             if resp and resp.status_code == 200:
-                # Проверяем, что это действительно админка
+                # Check if this is actually an admin panel
                 if 'bitrix' in resp.text.lower() and ('auth' in resp.text.lower() or 
                                                        'login' in resp.text.lower() or
-                                                       'форма авторизации' in resp.text.lower()):
+                                                       'authorization form' in resp.text.lower()):
                     return url
                 
-                # Проверка по заголовкам
+                # Check by headers
                 if 'bitrix' in resp.headers.get('X-Bitrix-Composite', '').lower():
                     return url
         
         return None
     
     def _check_sensitive_paths(self, base_url: str) -> List[str]:
-        """Проверка доступности чувствительных путей"""
+        """Check accessibility of sensitive paths"""
         exposed = []
         
         for path in self.SENSITIVE_PATHS:
@@ -353,19 +352,19 @@ class BitrixRecon:
             
             status = resp.status_code
             
-            # 200 - доступен, 401/403 - существует но защищен, 301/302 - редирект
+            # 200 - accessible, 401/403 - exists but protected, 301/302 - redirect
             if status in [200, 401, 403]:
                 exposed.append(f"{path} (HTTP {status})")
                 self.logger.warning(f"Exposed path found: {path} ({status})")
             
-            # Для backup директорий важно даже перенаправление
+            # For backup directories, even redirects are important
             elif status in [301, 302] and 'backup' in path:
                 exposed.append(f"{path} (Redirect -> {resp.headers.get('Location', 'unknown')})")
         
         return exposed
     
     def _analyze_robots(self, base_url: str) -> List[str]:
-        """Анализ robots.txt"""
+        """Analysis of robots.txt"""
         url = urljoin(base_url, '/robots.txt')
         resp = self.requester.get(url)
         
@@ -379,21 +378,21 @@ class BitrixRecon:
                     path = line.split(':', 1)[1].strip()
                     if path and path != '/':
                         disallow_paths.append(path)
-                        # Особенно интересны пути содержащие bitrix, admin, backup
+                        # Especially interesting paths containing bitrix, admin, backup
                         if any(keyword in path for keyword in ['bitrix', 'admin', 'backup', 'upload']):
                             self.logger.info(f"Interesting robots.txt entry: {path}")
         
         return disallow_paths
     
     def _find_sitemaps(self, base_url: str) -> List[str]:
-        """Поиск sitemap.xml и связанных файлов"""
+        """Find sitemap.xml and related files"""
         sitemaps = []
         
-        # Проверка стандартного sitemap.xml
+        # Check standard sitemap.xml
         sitemap_urls = [
             '/sitemap.xml',
             '/sitemap_index.xml',
-            '/robots.txt',  # Часто там есть ссылка на sitemap
+            '/robots.txt',  # Often contains sitemap link
         ]
         
         for path in sitemap_urls:
@@ -402,7 +401,7 @@ class BitrixRecon:
             
             if resp and resp.status_code == 200:
                 if path == '/robots.txt':
-                    # Ищем Sitemap: директиву
+                    # Look for Sitemap: directive
                     for line in resp.text.split('\n'):
                         if line.lower().startswith('sitemap:'):
                             sitemap_url = line.split(':', 1)[1].strip()
@@ -410,7 +409,7 @@ class BitrixRecon:
                 else:
                     sitemaps.append(urljoin(base_url, path))
                     
-                    # Парсим sitemap на наличие других sitemap'ов
+                    # Parse sitemap for other sitemaps
                     if 'xml' in resp.headers.get('Content-Type', ''):
                         try:
                             soup = BeautifulSoup(resp.text, 'xml')
@@ -420,11 +419,11 @@ class BitrixRecon:
                         except:
                             pass
         
-        # Удаляем дубликаты
+        # Remove duplicates
         return list(set(sitemaps))
     
     def _detect_technologies(self, base_url: str) -> List[str]:
-        """Определение используемых технологий"""
+        """Detection of used technologies"""
         techs = []
         
         resp = self.requester.get(base_url)
@@ -435,7 +434,7 @@ class BitrixRecon:
         server = headers.get('Server', '')
         powered = headers.get('X-Powered-By', '')
         
-        # Веб-сервер
+        # Web server
         if 'nginx' in server.lower():
             techs.append(f"nginx ({server})")
         elif 'apache' in server.lower():
@@ -445,14 +444,14 @@ class BitrixRecon:
         if 'php' in powered.lower():
             techs.append(f"PHP ({powered})")
         
-        # Кэширование
+        # Caching
         if 'x-bitrix-composite' in headers:
             techs.append("Bitrix Composite Cache")
         
         if 'x-bitrix-cdn' in headers:
             techs.append("Bitrix CDN")
         
-        # Varnish/Nginx кэш
+        # Varnish/Nginx cache
         if 'x-varnish' in headers or 'x-cache' in headers:
             techs.append("Reverse Proxy Cache")
         
@@ -460,24 +459,24 @@ class BitrixRecon:
         if 'cf-ray' in headers or 'cloudflare' in headers.get('Server', '').lower():
             techs.append("Cloudflare")
         
-        # Проверка на CDN по IP (упрощенно)
+        # Check CDN by header
         cdn_headers = ['X-Cache', 'X-Edge-Location', 'X-CDN', 'CF-Cache-Status']
         for h in cdn_headers:
             if h in headers:
                 techs.append(f"CDN: {h}")
         
-        # Проверка базы данных (через ошибки или особенности)
-        # Это можно расширить в будущем
+        # Check database (through errors or features)
+        # This can be extended in the future
         
         return techs
     
     def _aggressive_scan(self, base_url: str, result: ReconResult):
-        """Агрессивное сканирование (больше запросов, глубже проверка)"""
+        """Aggressive scanning (more requests, deeper checking)"""
         self.logger.info("Starting aggressive scan...")
         
-        # Поиск типовых Bitrix-страниц
+        # Search for typical Bitrix pages
         common_pages = [
-            '/bitrix/rk.php',  # Редиректы
+            '/bitrix/rk.php',  # Redirects
             '/bitrix/redirect.php',
             '/bitrix/tools/',
             '/bitrix/components/',
@@ -498,7 +497,7 @@ class BitrixRecon:
         if found_pages:
             self.logger.info(f"Common pages found: {found_pages}")
         
-        # Поиск API endpoints
+        # Search for API endpoints
         api_paths = [
             '/rest/',
             '/api/',
@@ -509,11 +508,11 @@ class BitrixRecon:
         
         for path in api_paths:
             url = urljoin(base_url, path)
-            resp = self.requester.options(url)  # OPTIONS запрос
+            resp = self.requester.options(url)  # OPTIONS request
             if resp and resp.status_code != 405:  # 405 = Method Not Allowed
                 self.logger.info(f"API endpoint might exist: {path}")
         
-        # Проверка файлов конфигурации с разными расширениями
+        # Check configuration files with different extensions
         config_variants = [
             '/bitrix/.settings.php',
             '/bitrix/.settings.php.bak',
@@ -529,15 +528,15 @@ class BitrixRecon:
             url = urljoin(base_url, path)
             resp = self.requester.get(url)
             if resp and resp.status_code == 200 and len(resp.text) > 0:
-                # Проверяем, что это не 404 страница
+                # Check that this is not a 404 page
                 if resp.status_code == 200 and '<?php' in resp.text:
                     result.exposed_paths.append(f"{path} (CRITICAL: Config file exposed!)")
                     self.logger.critical(f"Config file exposed: {path}")
 
 
-# Пример использования и тестирования
+# Example usage and testing
 if __name__ == "__main__":
-    # Заглушки для тестирования
+    # Mock objects for testing
     class MockRequester:
         def get(self, url, **kwargs):
             import requests
@@ -567,7 +566,7 @@ if __name__ == "__main__":
         def success(self, msg): print(f"[OK] {msg}")
         def critical(self, msg): print(f"[CRIT] {msg}")
     
-    # Тест
+    # Test
     import sys
     if len(sys.argv) > 1:
         target = sys.argv[1]
